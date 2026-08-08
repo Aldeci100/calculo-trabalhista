@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login — Cálculo Trabalhista</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  body { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+  .login-caixa { max-width: 360px; width: 100%; }
+  .login-caixa h1 { text-align: center; font-size: 1.2rem; color: var(--azul-escuro); margin-bottom: 20px; }
+  .login-caixa button { width: 100%; margin-top: 8px; }
+  .link-secundario { text-align: center; margin-top: 12px; font-size: 0.85rem; }
+  .link-secundario a { color: var(--azul); cursor: pointer; text-decoration: underline; }
+  .erro { color: #b91c1c; font-size: 0.85rem; margin-top: 8px; text-align: center; }
+  .sucesso { color: var(--verde); font-size: 0.85rem; margin-top: 8px; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="painel login-caixa">
+  <h1>Cálculo Trabalhista — Login</h1>
+
+  <div id="avisoNaoConfigurado" class="aviso" style="display:none;">
+    Firebase ainda não configurado neste sistema. Veja <code>CONFIGURAR-FIREBASE.md</code> para os passos.
+  </div>
+
+  <div id="formLogin">
+    <div class="campo"><label>E-mail</label><input type="email" id="email" autocomplete="username"></div>
+    <div class="campo"><label>Senha</label><input type="password" id="senha" autocomplete="current-password"></div>
+    <button class="principal" id="btnEntrar">Entrar</button>
+    <div class="link-secundario"><a id="linkEsqueciSenha">Esqueci minha senha</a></div>
+    <div id="mensagem"></div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="js/firebase-init.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  if (!firebaseConfigurado) {
+    document.getElementById("avisoNaoConfigurado").style.display = "block";
+  } else {
+    firebaseAuth.onAuthStateChanged((usuario) => {
+      if (usuario) window.location.href = "index.html";
+    });
+  }
+
+  document.getElementById("btnEntrar").addEventListener("click", async () => {
+    const email = document.getElementById("email").value.trim();
+    const senha = document.getElementById("senha").value;
+    const mensagem = document.getElementById("mensagem");
+    mensagem.innerHTML = "";
+    if (!email || !senha) {
+      mensagem.innerHTML = '<div class="erro">Preencha e-mail e senha.</div>';
+      return;
+    }
+    try {
+      await fazerLogin(email, senha);
+      window.location.href = "index.html";
+    } catch (erro) {
+      mensagem.innerHTML = `<div class="erro">Não foi possível entrar: ${erro.message}</div>`;
+    }
+  });
+
+  document.getElementById("linkEsqueciSenha").addEventListener("click", async () => {
+    const email = document.getElementById("email").value.trim();
+    const mensagem = document.getElementById("mensagem");
+    if (!email) {
+      mensagem.innerHTML = '<div class="erro">Digite seu e-mail acima primeiro, depois clique em "Esqueci minha senha".</div>';
+      return;
+    }
+    try {
+      await recuperarSenha(email);
+      mensagem.innerHTML = '<div class="sucesso">E-mail de redefinição de senha enviado — confira sua caixa de entrada.</div>';
+    } catch (erro) {
+      mensagem.innerHTML = `<div class="erro">Não foi possível enviar: ${erro.message}</div>`;
+    }
+  });
+</script>
+</body>
+</html>

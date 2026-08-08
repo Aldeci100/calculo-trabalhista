@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Histórico — Cálculo Trabalhista</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topo" style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+  <div>
+    <h1>Histórico de cálculos</h1>
+    <p>Cálculos salvos por todo o escritório</p>
+  </div>
+  <div style="font-size:0.85rem; text-align:right;">
+    <div id="usuarioLogado">—</div>
+    <a href="#" id="btnSair" style="color:#fff; text-decoration:underline; cursor:pointer;">Sair</a>
+    · <a href="index.html" style="color:#fff; text-decoration:underline;">Novo cálculo</a>
+  </div>
+</header>
+
+<main>
+  <section class="painel">
+    <table class="resultado" id="tabelaHistorico">
+      <thead>
+        <tr><th>Data</th><th>Reclamante</th><th>Reclamado</th><th>Processo</th><th style="text-align:right;">Total</th><th>Calculado por</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div id="mensagemHistorico"></div>
+  </section>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="js/firebase-init.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/core.js"></script>
+<script>
+  exigirLogin(async () => {
+    const corpo = document.querySelector("#tabelaHistorico tbody");
+    const mensagem = document.getElementById("mensagemHistorico");
+    try {
+      const snap = await firebaseDb.collection("calculos").orderBy("criadoEm", "desc").limit(100).get();
+      if (snap.empty) {
+        mensagem.textContent = "Nenhum cálculo salvo ainda.";
+        return;
+      }
+      snap.forEach((doc) => {
+        const c = doc.data();
+        const data = c.criadoEm && c.criadoEm.toDate ? c.criadoEm.toDate().toLocaleString("pt-BR") : "-";
+        const linha = document.createElement("tr");
+        linha.innerHTML = `
+          <td>${data}</td>
+          <td>${c.reclamante || "-"}</td>
+          <td>${c.reclamado || "-"}</td>
+          <td>${c.numeroProcesso || "-"}</td>
+          <td class="valor">${formatarMoeda(c.total)}</td>
+          <td>${c.criadoPor || "-"}</td>
+        `;
+        corpo.appendChild(linha);
+      });
+    } catch (erro) {
+      mensagem.innerHTML = `<div class="erro">Não foi possível carregar o histórico: ${erro.message}</div>`;
+    }
+  });
+
+  document.getElementById("btnSair").addEventListener("click", (e) => {
+    e.preventDefault();
+    sair();
+  });
+</script>
+</body>
+</html>
