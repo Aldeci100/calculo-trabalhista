@@ -19,6 +19,7 @@ function dataFimProjetada(dados) {
  * mesma proporção (avos/dias) já usada para calcular essas verbas sobre o salário
  * base, só que aplicada ao valor médio mensal do adicional em vez do salário todo.
  */
+function calcularReflexosSobreAdicional(dados, valorMensalAdicional) {
   const fim = dataFimProjetada(dados);
   const avos13 = contarAvos13(fim);
   const avosFerias = avosFeriasProporcionais(dados, fim);
@@ -65,6 +66,7 @@ const VERBA_SALDO_SALARIO = {
     };
   },
 };
+
 const VERBA_SALARIO_RETIDO = {
   id: "salarioRetido",
   nome: "Salário retido (mês(es) integral(is) não pago(s))",
@@ -74,7 +76,6 @@ const VERBA_SALARIO_RETIDO = {
   calcular(dados, opcoes) {
     const valorMensal = Number(opcoes.valorMensal || dados.salario || 0);
     const meses = Number(opcoes.meses || 0);
-function calcularReflexosSobreAdicional(dados, valorMensalAdicional) {
     const devido = arredondar(valorMensal * meses);
     return { devido, memoria: [`${formatarMoeda(valorMensal)} x ${meses} mês(es) não pago(s) = ${formatarMoeda(devido)}`] };
   },
