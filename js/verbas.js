@@ -19,7 +19,6 @@ function dataFimProjetada(dados) {
  * mesma proporção (avos/dias) já usada para calcular essas verbas sobre o salário
  * base, só que aplicada ao valor médio mensal do adicional em vez do salário todo.
  */
-function calcularReflexosSobreAdicional(dados, valorMensalAdicional) {
   const fim = dataFimProjetada(dados);
   const avos13 = contarAvos13(fim);
   const avosFerias = avosFeriasProporcionais(dados, fim);
@@ -50,24 +49,22 @@ function calcularReflexosSobreAdicional(dados, valorMensalAdicional) {
 const VERBA_SALDO_SALARIO = {
   id: "saldoSalario",
   nome: "Saldo de salário",
-  baseLegal: "CLT art. 459 — dias efetivamente trabalhados no mês da rescisão, divididos pelos dias corridos reais do mês",
+  baseLegal: "CLT art. 459 — dias efetivamente trabalhados no mês da rescisão, divisor fixo de 30 dias (mês comercial)",
   incideFGTS: true,
   incideContribSocialIRPF: true,
   calcular(dados) {
     const dias = dados.demissao.getDate();
-    const totalDiasMes = diasNoMes(dados.demissao);
-    const valorDia = dados.salario / totalDiasMes;
+    const valorDia = dados.salario / 30;
     const devido = arredondar(valorDia * dias);
     return {
       devido,
       memoria: [
-        `Dias trabalhados no mês da rescisão: ${dias} de ${totalDiasMes} dias corridos do mês`,
-        `(${formatarMoeda(dados.salario)} ÷ ${totalDiasMes}) x ${dias} = ${formatarMoeda(devido)}`,
+        `Dias trabalhados no mês da rescisão: ${dias}`,
+        `(${formatarMoeda(dados.salario)} ÷ 30) x ${dias} = ${formatarMoeda(devido)}`,
       ],
     };
   },
 };
-
 const VERBA_SALARIO_RETIDO = {
   id: "salarioRetido",
   nome: "Salário retido (mês(es) integral(is) não pago(s))",
@@ -77,6 +74,7 @@ const VERBA_SALARIO_RETIDO = {
   calcular(dados, opcoes) {
     const valorMensal = Number(opcoes.valorMensal || dados.salario || 0);
     const meses = Number(opcoes.meses || 0);
+function calcularReflexosSobreAdicional(dados, valorMensalAdicional) {
     const devido = arredondar(valorMensal * meses);
     return { devido, memoria: [`${formatarMoeda(valorMensal)} x ${meses} mês(es) não pago(s) = ${formatarMoeda(devido)}`] };
   },
