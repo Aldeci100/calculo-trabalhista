@@ -41,6 +41,8 @@ o sistema.
 
 ## Como entrar
 
+![Tela de login](imagens/login.png)
+
 1. Acesse `https://aldeci100.github.io/calculo-trabalhista/login.html`.
 2. Digite o e-mail e a senha que o administrador te passou.
 3. Clique em **"Entrar"**.
@@ -55,14 +57,23 @@ conta a um escritório antes de você conseguir usar.
 
 ## Fazendo um cálculo
 
-Na tela principal (calculadora), preencha:
+Na tela principal (calculadora), preencha os dados do processo e marque as verbas que se
+aplicam ao caso — cada uma abre seus próprios campos quando marcada:
+
+![Dados do processo e verbas](imagens/calculadora-dados-verbas.png)
+
+Mais embaixo na mesma tela ficam as opções mais avançadas — contribuição social/IRPF,
+correção monetária e juros, honorários e custas — todas opcionais, e o botão de calcular:
+
+![Fases opcionais e botão Calcular](imagens/calculadora-fases-avancadas.png)
+
+Resumo do que cada seção faz:
 
 1. **Dados do processo**: reclamante, reclamado, nº do processo (opcionais, mas ajudam a
    identificar depois), salário base, data de admissão, data de demissão, tipo de aviso
    prévio.
 2. **Verbas**: marque só o que se aplica a esse caso (saldo de salário, aviso prévio,
-   13º, férias, horas extras, insalubridade, etc.) — cada uma tem seus próprios campos
-   quando marcada.
+   13º, férias, horas extras, insalubridade, etc.).
 3. **FGTS** (opcional): marque se quiser calcular o FGTS 8% e a multa de 40%.
 4. **Contribuição social e IRPF** (opcional): descontos sobre as verbas de natureza
    salarial.
@@ -72,12 +83,15 @@ Na tela principal (calculadora), preencha:
    trabalhador.
 
 Clique em **"Calcular"**. O resultado mostra o resumo e, embaixo, o **"Histórico de
-Cálculo"** — o passo a passo detalhado de cada verba, com a base legal.
+Cálculo"** — o passo a passo detalhado de cada verba, com a base legal:
+
+![Resumo do cálculo](imagens/resultado.png)
 
 ## Salvando um cálculo
 
-Depois de calcular, clique em **"Salvar cálculo (visível para todo o escritório)"**. A
-partir daí, qualquer pessoa do seu escritório consegue ver esse cálculo no histórico.
+Depois de calcular, clique em **"Salvar cálculo (visível para todo o escritório)"** (veja
+o botão azul no fim da tabela do resumo, na imagem acima). A partir daí, qualquer pessoa
+do seu escritório consegue ver esse cálculo no histórico.
 
 ## Vendo o histórico
 

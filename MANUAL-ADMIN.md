@@ -34,9 +34,20 @@ só escondido na tela.
 
 ## Como entrar
 
+![Tela de login](imagens/login.png)
+
 1. Acesse `https://aldeci100.github.io/calculo-trabalhista/login.html`.
 2. Entre com `aldecigarcia100@gmail.com` e sua senha.
 3. Vá em **"Administração"** (link no topo) ou direto em `admin.html`.
+
+## A tela de administração
+
+![Painel de administração: minha conta, criar escritório, e escritórios cadastrados com seus usuários](imagens/admin.png)
+
+A tela tem três blocos: **"Minha conta de administrador"** (pra vincular sua própria
+conta a um escritório, se quiser), **"Criar novo escritório"**, e **"Escritórios
+cadastrados"** — onde ficam os cards de cada escritório, com a lista de usuários,
+o formulário de adicionar usuário novo, e o de vincular conta já existente.
 
 ## Criar um novo escritório
 

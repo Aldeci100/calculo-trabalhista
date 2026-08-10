@@ -3,3 +3,6 @@
 PROCESSO_*
 RELATORIO_PROCESSO_*
 *.PJC
+
+# Prints originais enviados pelo usuário — as versões organizadas ficam em imagens/
+IMAGEM/
