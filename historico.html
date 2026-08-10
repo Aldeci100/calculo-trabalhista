@@ -51,15 +51,20 @@
       snap.forEach((doc) => {
         const c = doc.data();
         const data = c.criadoEm && c.criadoEm.toDate ? c.criadoEm.toDate().toLocaleString("pt-BR") : "-";
+        const url = `visualizar.html?id=${doc.id}`;
         const linha = document.createElement("tr");
+        linha.style.cursor = "pointer";
         linha.innerHTML = `
-          <td>${data}</td>
-          <td>${c.reclamante || "-"}</td>
+          <td><a href="${url}">${data}</a></td>
+          <td><a href="${url}">${c.reclamante || "-"}</a></td>
           <td>${c.reclamado || "-"}</td>
           <td>${c.numeroProcesso || "-"}</td>
           <td class="valor">${formatarMoeda(c.total)}</td>
           <td>${c.criadoPor || "-"}</td>
         `;
+        linha.addEventListener("click", (e) => {
+          if (e.target.tagName !== "A") window.location.href = url;
+        });
         corpo.appendChild(linha);
       });
     } catch (erro) {

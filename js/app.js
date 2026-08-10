@@ -94,17 +94,6 @@ async function rodarCalculo() {
     btn.textContent = "Calcular";
   }
 
-  ultimoCalculo = {
-    reclamante: document.getElementById("reclamante").value,
-    reclamado: document.getElementById("reclamado").value,
-    numeroProcesso: document.getElementById("numeroProcesso").value,
-    salario,
-    admissao: document.getElementById("admissao").value,
-    demissao: document.getElementById("demissao").value,
-    resultados: resultados.map((r) => ({ nome: r.nome, devido: r.devido, valorCorrigido: r.valorCorrigido || null })),
-    total,
-  };
-
   renderizarResultado(resultados, total, aplicarCorrecao, infoCorrecao);
 
   const opcoesHonorarios = {
@@ -112,13 +101,37 @@ async function rodarCalculo() {
     percentualHonorarios: Number(document.getElementById("percentualHonorarios").value || 0.1),
     calcularCustas: document.getElementById("chkCustas").checked,
   };
+  let encargos = {};
   if (opcoesHonorarios.calcularHonorarios || opcoesHonorarios.calcularCustas) {
     const baseBruta = resultados.filter((r) => r.devido > 0).reduce((soma, r) => soma + r.devido, 0);
-    const encargos = calcularHonorariosECustas(baseBruta, opcoesHonorarios);
+    encargos = calcularHonorariosECustas(baseBruta, opcoesHonorarios);
     renderizarEncargos(encargos, baseBruta);
   } else {
     document.getElementById("painelEncargos").style.display = "none";
   }
+
+  ultimoCalculo = {
+    reclamante: document.getElementById("reclamante").value,
+    reclamado: document.getElementById("reclamado").value,
+    numeroProcesso: document.getElementById("numeroProcesso").value,
+    salario,
+    admissao: document.getElementById("admissao").value,
+    demissao: document.getElementById("demissao").value,
+    tipoAvisoPrevio,
+    comCorrecao: aplicarCorrecao,
+    dataAjuizamento: aplicarCorrecao ? document.getElementById("dataAjuizamento").value : null,
+    dataLiquidacao: aplicarCorrecao ? document.getElementById("dataLiquidacao").value : null,
+    resultados: resultados.map((r) => ({
+      nome: r.nome,
+      baseLegal: r.baseLegal,
+      memoria: r.memoria,
+      devido: r.devido,
+      valorCorrigido: r.valorCorrigido ?? null,
+      memoriaCorrecao: r.memoriaCorrecao || null,
+    })),
+    total,
+    encargos: Object.values(encargos).map((e) => ({ nome: e.nome, baseLegal: e.baseLegal, memoria: e.memoria, devido: e.devido })),
+  };
 }
 
 function renderizarResultado(resultados, total, comCorrecao, infoCorrecao) {

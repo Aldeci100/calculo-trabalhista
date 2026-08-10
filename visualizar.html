@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Planilha de Cálculo — Cálculo Trabalhista</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .cabecalho-processo {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 6px 24px;
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+  }
+  .cabecalho-processo b { color: var(--azul-escuro); }
+  .marca-relatorio { display: none; }
+
+  @media print {
+    header.topo, .no-imprimir { display: none !important; }
+    body { background: #fff; }
+    .painel { border: none; box-shadow: none; padding: 0; margin-bottom: 18px; }
+    .marca-relatorio { display: block; text-align: center; margin-bottom: 12px; }
+    .marca-relatorio h1 { font-size: 1.3rem; color: #000; margin: 0; }
+    main { max-width: 100%; margin: 0; padding: 0 12px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topo" style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+  <div>
+    <h1>Planilha de Cálculo</h1>
+    <p>Visualização de cálculo salvo</p>
+  </div>
+  <div style="font-size:0.85rem; text-align:right;">
+    <div id="usuarioLogado">—</div>
+    <a href="#" id="btnSair" style="color:#fff; text-decoration:underline; cursor:pointer;">Sair</a>
+    · <a href="historico.html" style="color:#fff; text-decoration:underline;">Histórico</a>
+    · <a href="index.html" style="color:#fff; text-decoration:underline;">Novo cálculo</a>
+  </div>
+</header>
+
+<main>
+  <div id="conteudo">
+    <p>Carregando...</p>
+  </div>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="js/firebase-init.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/core.js"></script>
+<script>
+  function blocoVerba(item) {
+    const memoriaCorrecaoHtml = item.memoriaCorrecao ? `<ul>${item.memoriaCorrecao.map((l) => `<li>${l}</li>`).join("")}</ul>` : "";
+    const corrigidoHtml = item.valorCorrigido != null ? `<div class="valor-final">Resultado corrigido: ${formatarMoeda(item.valorCorrigido)}</div>` : "";
+    return `
+      <div class="historico-verba">
+        <h3>${item.nome}</h3>
+        <div class="base-legal">${item.baseLegal || ""}</div>
+        <ul>${(item.memoria || []).map((l) => `<li>${l}</li>`).join("")}</ul>
+        <div class="valor-final">Resultado${item.valorCorrigido != null ? " nominal" : ""}: ${formatarMoeda(item.devido)}</div>
+        ${memoriaCorrecaoHtml}
+        ${corrigidoHtml}
+      </div>
+    `;
+  }
+
+  function renderizarCalculo(calculo, dataCriacao) {
+    const comCorrecao = !!calculo.comCorrecao;
+    const totalCorrigido = comCorrecao
+      ? arredondar((calculo.resultados || []).reduce((s, r) => s + (r.valorCorrigido || 0), 0))
+      : null;
+
+    const linhasResumo = (calculo.resultados || [])
+      .map((r) => comCorrecao
+        ? `<tr><td>${r.nome}</td><td class="valor">${formatarMoeda(r.devido)}</td><td class="valor">${formatarMoeda(r.valorCorrigido)}</td></tr>`
+        : `<tr><td>${r.nome}</td><td class="valor">${formatarMoeda(r.devido)}</td></tr>`)
+      .join("");
+
+    const linhaTotal = comCorrecao
+      ? `<tr class="total"><td>Total</td><td class="valor">${formatarMoeda(calculo.total)}</td><td class="valor">${formatarMoeda(totalCorrigido)}</td></tr>`
+      : `<tr class="total"><td>Total</td><td class="valor">${formatarMoeda(calculo.total)}</td></tr>`;
+
+    const cabecalhoTabela = comCorrecao
+      ? "<tr><th>Verba</th><th style='text-align:right;'>Valor nominal</th><th style='text-align:right;'>Valor corrigido</th></tr>"
+      : "<tr><th>Verba</th><th style='text-align:right;'>Valor</th></tr>";
+
+    const historicoHtml = (calculo.resultados || []).map(blocoVerba).join("");
+
+    const encargos = calculo.encargos || [];
+    const encargosHtml = encargos.length
+      ? `
+        <section class="painel">
+          <h2>Encargos do reclamado (não entram no valor do trabalhador)</h2>
+          <table class="resultado">
+            <thead><tr><th>Item</th><th style="text-align:right;">Valor</th></tr></thead>
+            <tbody>
+              ${encargos.map((e) => `<tr><td>${e.nome}</td><td class="valor">${formatarMoeda(e.devido)}</td></tr>`).join("")}
+              <tr class="total"><td>Total de encargos</td><td class="valor">${formatarMoeda(arredondar(encargos.reduce((s, e) => s + e.devido, 0)))}</td></tr>
+            </tbody>
+          </table>
+          ${encargos.map(blocoVerba).join("")}
+        </section>
+      `
+      : "";
+
+    document.getElementById("conteudo").innerHTML = `
+      <div class="marca-relatorio"><h1>Cálculo Trabalhista — Planilha de Cálculo</h1></div>
+
+      <section class="painel">
+        <h2>Dados do processo</h2>
+        <div class="cabecalho-processo">
+          <div><b>Reclamante:</b> ${calculo.reclamante || "-"}</div>
+          <div><b>Reclamado:</b> ${calculo.reclamado || "-"}</div>
+          <div><b>Processo:</b> ${calculo.numeroProcesso || "-"}</div>
+          <div><b>Admissão:</b> ${formatarDataInputBR(calculo.admissao)}</div>
+          <div><b>Demissão:</b> ${formatarDataInputBR(calculo.demissao)}</div>
+          <div><b>Salário base:</b> ${formatarMoeda(calculo.salario)}</div>
+          <div><b>Calculado por:</b> ${calculo.criadoPor || "-"}</div>
+          <div><b>Data do cálculo:</b> ${dataCriacao}</div>
+        </div>
+        <div class="acoes no-imprimir">
+          <button class="principal" onclick="window.print()">Imprimir / Salvar em PDF</button>
+        </div>
+      </section>
+
+      <section class="painel">
+        <h2>Resumo do cálculo</h2>
+        <table class="resultado">
+          <thead>${cabecalhoTabela}</thead>
+          <tbody>${linhasResumo}${linhaTotal}</tbody>
+        </table>
+      </section>
+
+      ${encargosHtml}
+
+      <section class="painel">
+        <h2>Histórico de Cálculo</h2>
+        ${historicoHtml}
+      </section>
+    `;
+  }
+
+  function formatarDataInputBR(valor) {
+    if (!valor) return "-";
+    const [ano, mes, dia] = valor.split("-");
+    return `${dia}/${mes}/${ano}`;
+  }
+
+  exigirLogin(async () => {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
+    const conteudo = document.getElementById("conteudo");
+    if (!id) {
+      conteudo.innerHTML = '<div class="aviso">Nenhum cálculo informado. Volte ao <a href="historico.html">histórico</a> e clique em um cálculo salvo.</div>';
+      return;
+    }
+    try {
+      const doc = await firebaseDb.collection("calculos").doc(id).get();
+      if (!doc.exists) {
+        conteudo.innerHTML = '<div class="aviso">Cálculo não encontrado (pode ter sido apagado).</div>';
+        return;
+      }
+      const calculo = doc.data();
+      const dataCriacao = calculo.criadoEm && calculo.criadoEm.toDate ? calculo.criadoEm.toDate().toLocaleString("pt-BR") : "-";
+      renderizarCalculo(calculo, dataCriacao);
+    } catch (erro) {
+      conteudo.innerHTML = `<div class="erro">Não foi possível carregar: ${erro.message}</div>`;
+    }
+  });
+
+  document.getElementById("btnSair").addEventListener("click", (e) => {
+    e.preventDefault();
+    sair();
+  });
+</script>
+</body>
+</html>
