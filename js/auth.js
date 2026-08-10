@@ -2,15 +2,21 @@
  * Autenticação (Firebase Auth) — login por e-mail/senha para cada pessoa do escritório.
  * Multiusuário por grupos ("escritórios"): cada usuário pertence a um escritório
  * (coleção `usuarios/{uid}` no Firestore, campo escritorioId) e só enxerga os dados
- * daquele escritório. Um único e-mail (EMAIL_ADMIN) é o administrador geral do
- * sistema — cria escritórios, cria usuários, e é o único que pode apagar cálculos.
- * Não há tela pública de cadastro — só o admin cria contas (veja admin.html).
+ * daquele escritório.
+ *
+ * Dois níveis de permissão especial:
+ *  - Super-admin (EMAIL_SUPERADMIN, fixo no código): cria escritórios, cria/vincula
+ *    usuários em qualquer escritório, e pode apagar qualquer cálculo em qualquer lugar.
+ *  - Admin de escritório (campo `admin: true` no doc usuarios/{uid}): só dentro do
+ *    próprio escritório, pode apagar cálculos daquele grupo. Não cria escritórios
+ *    nem usuários — isso continua exclusivo do super-admin.
+ * Não há tela pública de cadastro — só o super-admin cria contas (veja admin.html).
  */
 
-const EMAIL_ADMIN = "darafs.adv@gmail.com";
+const EMAIL_SUPERADMIN = "aldecigarcia100@gmail.com";
 
-function ehAdmin(usuario) {
-  return !!usuario && usuario.email === EMAIL_ADMIN;
+function ehSuperAdmin(usuario) {
+  return !!usuario && usuario.email === EMAIL_SUPERADMIN;
 }
 
 async function fazerLogin(email, senha) {
@@ -48,19 +54,24 @@ function exigirLogin(callback) {
     const elUsuario = document.getElementById("usuarioLogado");
     if (elUsuario) elUsuario.textContent = usuario.email;
     const elAdmin = document.getElementById("linkAdmin");
-    if (elAdmin) elAdmin.style.display = ehAdmin(usuario) ? "inline" : "none";
+    if (elAdmin) elAdmin.style.display = ehSuperAdmin(usuario) ? "inline" : "none";
     if (callback) callback(usuario);
   });
 }
 
 /**
- * Busca o perfil (usuarios/{uid}) do usuário logado — contém o escritorioId.
- * Devolve null se a conta ainda não foi associada a nenhum escritório
- * (acontece se o admin esqueceu de vincular, ou é o próprio admin sem escritório próprio).
+ * Busca o perfil (usuarios/{uid}) do usuário logado — contém o escritorioId e se é
+ * admin daquele escritório. Devolve null se a conta ainda não foi vinculada a nenhum
+ * escritório (mostre usuario.uid pra pessoa passar pro super-admin vincular).
  */
 async function obterMeuPerfil(usuario) {
   const doc = await firebaseDb.collection("usuarios").doc(usuario.uid).get();
   return doc.exists ? doc.data() : null;
+}
+
+/** Pode apagar cálculos: super-admin (em qualquer escritório) ou admin do próprio escritório. */
+function podeExcluir(usuario, perfil) {
+  return ehSuperAdmin(usuario) || !!(perfil && perfil.admin === true);
 }
 
 /**

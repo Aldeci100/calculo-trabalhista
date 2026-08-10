@@ -53,16 +53,17 @@
   exigirLogin(async (usuario) => {
     const corpo = document.querySelector("#tabelaHistorico tbody");
     const mensagem = document.getElementById("mensagemHistorico");
-    const podeExcluir = ehAdmin(usuario);
     try {
       let consulta = firebaseDb.collection("calculos").orderBy("criadoEm", "desc").limit(100);
-      if (!ehAdmin(usuario)) {
+      let podeExcluirAqui = ehSuperAdmin(usuario);
+      if (!ehSuperAdmin(usuario)) {
         const perfil = await obterMeuPerfil(usuario);
         if (!perfil || !perfil.escritorioId) {
-          mensagem.innerHTML = '<div class="aviso">Sua conta ainda não foi associada a um escritório. Peça para o administrador te adicionar.</div>';
+          mensagem.innerHTML = `<div class="aviso">Sua conta ainda não foi associada a um escritório. Informe este código para o administrador vincular: <b>${usuario.uid}</b></div>`;
           return;
         }
         consulta = firebaseDb.collection("calculos").where("escritorioId", "==", perfil.escritorioId).orderBy("criadoEm", "desc").limit(100);
+        podeExcluirAqui = podeExcluir(usuario, perfil);
       }
       const snap = await consulta.get();
       if (snap.empty) {
@@ -82,7 +83,7 @@
           <td>${c.numeroProcesso || "-"}</td>
           <td class="valor">${formatarMoeda(c.total)}</td>
           <td>${c.criadoPor || "-"}</td>
-          <td>${podeExcluir ? '<button class="btn-excluir" title="Apagar">🗑️</button>' : ""}</td>
+          <td>${podeExcluirAqui ? '<button class="btn-excluir" title="Apagar">🗑️</button>' : ""}</td>
         `;
         linha.addEventListener("click", (e) => {
           if (e.target.classList.contains("btn-excluir")) {

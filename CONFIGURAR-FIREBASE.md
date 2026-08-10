@@ -90,15 +90,27 @@ Assim que você me passar as chaves da Fase 5, eu:
 2. Testo o login com uma das contas que você criou na Fase 3.
 3. Testo se o botão "Salvar cálculo" está gravando certinho no Firestore e aparecendo no histórico.
 
-## Multiescritório (grupos) — regras atualizadas
+## Multiescritório (grupos) — dois níveis de permissão
 
-O sistema agora suporta vários escritórios isolados entre si, cada um com seus próprios
-usuários. Só o e-mail `darafs.adv@gmail.com` (definido em `js/auth.js`, constante
-`EMAIL_ADMIN`) consegue criar escritórios e usuários (pela tela `admin.html`) e apagar
-cálculos salvos. Os demais usuários só usam a calculadora e veem o histórico do próprio
-escritório.
+O sistema suporta vários escritórios isolados entre si, cada um com seus próprios
+usuários. Existem dois níveis especiais:
 
-Para isso funcionar, cole estas regras no Firestore (console do Firebase > Firestore
+- **Super-admin** (`aldecigarcia100@gmail.com`, constante `EMAIL_SUPERADMIN` em
+  `js/auth.js`): o único que cria escritórios, cria/vincula usuários (tela `admin.html`),
+  promove alguém a admin de um escritório, e pode apagar qualquer cálculo em qualquer
+  escritório.
+- **Admin de escritório** (marcado pelo super-admin ao criar/vincular o usuário): só
+  dentro do próprio escritório, pode apagar os cálculos daquele grupo. Não cria
+  escritórios nem usuários — isso continua exclusivo do super-admin.
+- **Usuário comum**: só usa a calculadora e vê/salva no histórico do próprio escritório,
+  sem poder apagar nada.
+
+Contas já existentes (criadas antes de existir o `admin.html`) precisam ser vinculadas a
+um escritório manualmente: a pessoa loga normalmente, e se a conta ainda não estiver
+vinculada, o sistema mostra um código (UID) na tela — ela repassa esse código pra você,
+e você cola em "Vincular conta já existente" dentro do escritório certo, em `admin.html`.
+
+Para isso tudo funcionar, cole estas regras no Firestore (console do Firebase > Firestore
 Database > aba Regras > apagar tudo > colar isto > Publicar):
 
 ```
@@ -106,38 +118,41 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function souAdmin() {
-      return request.auth != null && request.auth.token.email == 'darafs.adv@gmail.com';
+    function souSuperAdmin() {
+      return request.auth != null && request.auth.token.email == 'aldecigarcia100@gmail.com';
     }
-    function meuEscritorioId() {
-      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.escritorioId;
+    function meuPerfil() {
+      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
+    }
+    function souAdminDoEscritorio(escritorioId) {
+      return request.auth != null && meuPerfil().escritorioId == escritorioId && meuPerfil().admin == true;
     }
 
     match /escritorios/{id} {
       allow read: if request.auth != null;
-      allow write: if souAdmin();
+      allow write: if souSuperAdmin();
     }
 
     match /usuarios/{uid} {
-      allow read: if request.auth != null && (request.auth.uid == uid || souAdmin());
-      allow write: if souAdmin();
+      allow read: if request.auth != null && (request.auth.uid == uid || souSuperAdmin());
+      allow write: if souSuperAdmin();
     }
 
     match /calculos/{id} {
-      allow read: if souAdmin() || (request.auth != null && resource.data.escritorioId == meuEscritorioId());
-      allow create: if souAdmin() || (request.auth != null && request.resource.data.escritorioId == meuEscritorioId());
-      allow update, delete: if souAdmin();
+      allow read: if souSuperAdmin() || (request.auth != null && resource.data.escritorioId == meuPerfil().escritorioId);
+      allow create: if souSuperAdmin() || (request.auth != null && request.resource.data.escritorioId == meuPerfil().escritorioId);
+      allow update, delete: if souSuperAdmin() || souAdminDoEscritorio(resource.data.escritorioId);
     }
   }
 }
 ```
 
-**Sobre um possível aviso de índice**: na primeira vez que um usuário (não-admin) abrir o
-histórico, o Firestore pode mostrar um erro no console do navegador pedindo pra criar um
-"índice composto" (necessário porque a busca filtra por escritório e ordena por data ao
-mesmo tempo). Se isso acontecer, o próprio erro traz um link — é só clicar nele, abre o
-console do Firebase já com os campos preenchidos, e clicar em "Criar índice". Leva 1-2
-minutos para ficar pronto, e só precisa fazer isso uma vez.
+**Sobre um possível aviso de índice**: na primeira vez que um usuário (não super-admin)
+abrir o histórico, o Firestore pode mostrar um erro no console do navegador pedindo pra
+criar um "índice composto" (necessário porque a busca filtra por escritório e ordena por
+data ao mesmo tempo). Se isso acontecer, o próprio erro traz um link — é só clicar nele,
+abre o console do Firebase já com os campos preenchidos, e clicar em "Criar índice". Leva
+1-2 minutos para ficar pronto, e só precisa fazer isso uma vez.
 
 ## Onde os dados ficam hospedados
 

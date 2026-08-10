@@ -203,6 +203,10 @@ async function salvarCalculoAtual() {
   const usuario = firebaseAuth.currentUser;
   try {
     const perfil = usuario ? await obterMeuPerfil(usuario) : null;
+    if (usuario && !ehSuperAdmin(usuario) && (!perfil || !perfil.escritorioId)) {
+      mensagem.innerHTML = `<div class="aviso">Sua conta ainda não foi associada a um escritório. Informe este código para o administrador vincular: <b>${usuario.uid}</b></div>`;
+      return;
+    }
     await firebaseDb.collection("calculos").add({
       ...ultimoCalculo,
       escritorioId: perfil ? perfil.escritorioId : null,

@@ -108,6 +108,7 @@
       mensagem.innerHTML = '<div class="erro">Preencha o e-mail e uma senha com pelo menos 6 caracteres.</div>';
       return;
     }
+    const admin = card.querySelector(".campo-admin").checked;
     botao.disabled = true;
     botao.textContent = "Criando...";
     try {
@@ -115,17 +116,48 @@
       await firebaseDb.collection("usuarios").doc(uid).set({
         email,
         escritorioId,
+        admin,
         criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
       });
       mensagem.innerHTML = `<div class="sucesso">Usuário ${email} criado em "${escritorioNome}". Já pode avisar a senha pra pessoa.</div>`;
       card.querySelector(".campo-email").value = "";
       card.querySelector(".campo-senha").value = "";
+      card.querySelector(".campo-admin").checked = false;
       await carregarEscritorios(usuarioAtual);
     } catch (erro) {
       mensagem.innerHTML = `<div class="erro">Não foi possível criar: ${erro.message}</div>`;
     } finally {
       botao.disabled = false;
       botao.textContent = "Adicionar usuário";
+    }
+  }
+
+  async function vincularUsuarioExistente(escritorioId, escritorioNome, botao, usuarioAtual) {
+    const card = botao.closest(".escritorio-card");
+    const uid = card.querySelector(".campo-uid").value.trim();
+    const admin = card.querySelector(".campo-admin-vincular").checked;
+    const mensagem = card.querySelector(".mensagem-vincular");
+    mensagem.innerHTML = "";
+    if (!uid) {
+      mensagem.innerHTML = '<div class="erro">Cole o código (UID) que a pessoa te passou.</div>';
+      return;
+    }
+    try {
+      await firebaseDb.collection("usuarios").doc(uid).set({ escritorioId, admin, criadoEm: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      mensagem.innerHTML = `<div class="sucesso">Conta vinculada a "${escritorioNome}".</div>`;
+      card.querySelector(".campo-uid").value = "";
+      await carregarEscritorios(usuarioAtual);
+    } catch (erro) {
+      mensagem.innerHTML = `<div class="erro">Não foi possível vincular: ${erro.message}</div>`;
+    }
+  }
+
+  async function alternarAdmin(uid, admin, usuarioAtual) {
+    try {
+      await firebaseDb.collection("usuarios").doc(uid).update({ admin: !admin });
+      await carregarEscritorios(usuarioAtual);
+    } catch (erro) {
+      alert("Não foi possível atualizar: " + erro.message);
     }
   }
 
@@ -189,27 +221,45 @@
       card.className = "escritorio-card";
       const listaUsuariosHtml = usuariosSnap.empty
         ? "<li>Nenhum usuário ainda.</li>"
-        : usuariosSnap.docs.map((u) => `<li><span>${u.data().email}</span><button class="btn-excluir" data-uid="${u.id}" data-email="${u.data().email}" title="Remover acesso">🗑️</button></li>`).join("");
+        : usuariosSnap.docs.map((u) => {
+            const dados = u.data();
+            const rotuloAdmin = dados.admin ? " · <b>admin do escritório</b>" : "";
+            return `<li><span>${dados.email}${rotuloAdmin}</span><span>
+              <button class="btn-alternar-admin" data-uid="${u.id}" data-admin="${!!dados.admin}" title="${dados.admin ? "Tirar admin" : "Tornar admin"}">${dados.admin ? "⭐" : "☆"}</button>
+              <button class="btn-excluir" data-uid="${u.id}" data-email="${dados.email}" title="Remover acesso">🗑️</button>
+            </span></li>`;
+          }).join("");
       card.innerHTML = `
         <h3>${escritorio.nome}</h3>
         <ul class="lista-usuarios">${listaUsuariosHtml}</ul>
         <div class="form-inline">
           <div class="campo"><label>E-mail do novo usuário</label><input type="email" class="campo-email"></div>
           <div class="campo"><label>Senha provisória</label><input type="text" class="campo-senha" placeholder="mín. 6 caracteres"></div>
-          <button class="principal btn-adicionar-usuario">Adicionar usuário</button>
+          <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem;"><input type="checkbox" class="campo-admin"> Admin deste escritório</label>
+          <button class="principal btn-adicionar-usuario">Adicionar usuário novo</button>
         </div>
         <div class="mensagem-usuario"></div>
+        <div class="form-inline" style="margin-top:10px; border-top:1px solid var(--cinza-fundo); padding-top:10px;">
+          <div class="campo"><label>Vincular conta já existente (código/UID)</label><input type="text" class="campo-uid" placeholder="cole o código que a pessoa te passou"></div>
+          <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem;"><input type="checkbox" class="campo-admin-vincular"> Admin deste escritório</label>
+          <button class="btn-vincular-existente">Vincular</button>
+        </div>
+        <div class="mensagem-vincular"></div>
       `;
       card.querySelector(".btn-adicionar-usuario").addEventListener("click", (e) => adicionarUsuario(doc.id, escritorio.nome, e.target, usuarioAtual));
+      card.querySelector(".btn-vincular-existente").addEventListener("click", (e) => vincularUsuarioExistente(doc.id, escritorio.nome, e.target, usuarioAtual));
       card.querySelectorAll(".btn-excluir").forEach((btn) => {
         btn.addEventListener("click", () => removerUsuario(btn.dataset.uid, btn.dataset.email, usuarioAtual));
+      });
+      card.querySelectorAll(".btn-alternar-admin").forEach((btn) => {
+        btn.addEventListener("click", () => alternarAdmin(btn.dataset.uid, btn.dataset.admin === "true", usuarioAtual));
       });
       container.appendChild(card);
     }
   }
 
   exigirLogin((usuario) => {
-    if (!ehAdmin(usuario)) {
+    if (!ehSuperAdmin(usuario)) {
       document.getElementById("acessoNegado").style.display = "block";
       return;
     }
