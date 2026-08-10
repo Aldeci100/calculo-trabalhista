@@ -5,6 +5,20 @@ cria escritórios, cria/vincula usuários, e pode apagar cálculos de qualquer e
 
 Site: `https://aldeci100.github.io/calculo-trabalhista/`
 
+## Para que serve
+
+O sistema existe pra que **vários escritórios de advocacia** consigam calcular verbas
+trabalhistas (rescisão, férias, 13º, horas extras, correção monetária, etc.) de um jeito
+padronizado, sem misturar os dados de um escritório com os de outro — e sem cada
+escritório precisar montar sua própria conta de calculadora do zero.
+
+Exemplo: o escritório **DARAFS** usa o sistema pra calcular os casos trabalhistas dos
+clientes dele. Se amanhã outro escritório (digamos, **Silva Advogados**) também quiser
+usar, você cria um escritório novo pra eles em `admin.html`, cria/vincula os usuários
+deles — e a partir daí, ninguém do DARAFS vê os cálculos do Silva Advogados, e
+vice-versa. Cada escritório só administra a própria equipe (quem pode ver e apagar), mas
+só você cria escritórios novos e o acesso inicial de cada um.
+
 ## Visão geral do sistema
 
 O sistema tem três papéis:
