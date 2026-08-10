@@ -135,17 +135,19 @@
   async function vincularUsuarioExistente(escritorioId, escritorioNome, botao, usuarioAtual) {
     const card = botao.closest(".escritorio-card");
     const uid = card.querySelector(".campo-uid").value.trim();
+    const email = card.querySelector(".campo-email-vincular").value.trim();
     const admin = card.querySelector(".campo-admin-vincular").checked;
     const mensagem = card.querySelector(".mensagem-vincular");
     mensagem.innerHTML = "";
-    if (!uid) {
-      mensagem.innerHTML = '<div class="erro">Cole o código (UID) que a pessoa te passou.</div>';
+    if (!uid || !email) {
+      mensagem.innerHTML = '<div class="erro">Preencha o e-mail da pessoa e cole o código (UID) que ela te passou.</div>';
       return;
     }
     try {
-      await firebaseDb.collection("usuarios").doc(uid).set({ escritorioId, admin, criadoEm: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      await firebaseDb.collection("usuarios").doc(uid).set({ email, escritorioId, admin, criadoEm: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
       mensagem.innerHTML = `<div class="sucesso">Conta vinculada a "${escritorioNome}".</div>`;
       card.querySelector(".campo-uid").value = "";
+      card.querySelector(".campo-email-vincular").value = "";
       await carregarEscritorios(usuarioAtual);
     } catch (erro) {
       mensagem.innerHTML = `<div class="erro">Não foi possível vincular: ${erro.message}</div>`;
@@ -240,6 +242,7 @@
         </div>
         <div class="mensagem-usuario"></div>
         <div class="form-inline" style="margin-top:10px; border-top:1px solid var(--cinza-fundo); padding-top:10px;">
+          <div class="campo"><label>E-mail da pessoa</label><input type="email" class="campo-email-vincular"></div>
           <div class="campo"><label>Vincular conta já existente (código/UID)</label><input type="text" class="campo-uid" placeholder="cole o código que a pessoa te passou"></div>
           <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem;"><input type="checkbox" class="campo-admin-vincular"> Admin deste escritório</label>
           <button class="btn-vincular-existente">Vincular</button>
