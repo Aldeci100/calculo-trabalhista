@@ -202,8 +202,10 @@ async function salvarCalculoAtual() {
   }
   const usuario = firebaseAuth.currentUser;
   try {
+    const perfil = usuario ? await obterMeuPerfil(usuario) : null;
     await firebaseDb.collection("calculos").add({
       ...ultimoCalculo,
+      escritorioId: perfil ? perfil.escritorioId : null,
       criadoPor: usuario ? usuario.email : "desconhecido",
       criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
     });
