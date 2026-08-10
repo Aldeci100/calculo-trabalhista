@@ -24,7 +24,7 @@
   <section class="painel">
     <table class="resultado" id="tabelaHistorico">
       <thead>
-        <tr><th>Data</th><th>Reclamante</th><th>Reclamado</th><th>Processo</th><th style="text-align:right;">Total</th><th>Calculado por</th></tr>
+        <tr><th>Data</th><th>Reclamante</th><th>Reclamado</th><th>Processo</th><th style="text-align:right;">Total</th><th>Calculado por</th><th></th></tr>
       </thead>
       <tbody></tbody>
     </table>
@@ -39,9 +39,22 @@
 <script src="js/auth.js"></script>
 <script src="js/core.js"></script>
 <script>
-  exigirLogin(async () => {
+  const EMAIL_PODE_EXCLUIR = "darafs.adv@gmail.com";
+
+  async function excluirCalculo(id, linha) {
+    if (!confirm("Apagar este cálculo do histórico? Essa ação não pode ser desfeita.")) return;
+    try {
+      await firebaseDb.collection("calculos").doc(id).delete();
+      linha.remove();
+    } catch (erro) {
+      alert("Não foi possível apagar: " + erro.message);
+    }
+  }
+
+  exigirLogin(async (usuario) => {
     const corpo = document.querySelector("#tabelaHistorico tbody");
     const mensagem = document.getElementById("mensagemHistorico");
+    const podeExcluir = usuario && usuario.email === EMAIL_PODE_EXCLUIR;
     try {
       const snap = await firebaseDb.collection("calculos").orderBy("criadoEm", "desc").limit(100).get();
       if (snap.empty) {
@@ -61,8 +74,14 @@
           <td>${c.numeroProcesso || "-"}</td>
           <td class="valor">${formatarMoeda(c.total)}</td>
           <td>${c.criadoPor || "-"}</td>
+          <td>${podeExcluir ? '<button class="btn-excluir" title="Apagar">🗑️</button>' : ""}</td>
         `;
         linha.addEventListener("click", (e) => {
+          if (e.target.classList.contains("btn-excluir")) {
+            e.stopPropagation();
+            excluirCalculo(doc.id, linha);
+            return;
+          }
           if (e.target.tagName !== "A") window.location.href = url;
         });
         corpo.appendChild(linha);
