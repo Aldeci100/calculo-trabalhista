@@ -1,5 +1,16 @@
 /* Utilitários gerais e tabelas legais vigentes. */
 
+/**
+ * Escapa texto vindo do usuário (reclamante, nome do escritório, etc.) antes de
+ * inserir via innerHTML — sem isso, alguém poderia salvar HTML/script num campo de
+ * texto e ele rodaria na tela de quem visse aquele cálculo depois (XSS armazenado).
+ */
+function escapeHtml(texto) {
+  const div = document.createElement("div");
+  div.textContent = texto === null || texto === undefined ? "" : String(texto);
+  return div.innerHTML;
+}
+
 function formatarMoeda(valor) {
   return Number(valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }

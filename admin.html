@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Administração — Cálculo Trabalhista</title>
+<style>body{visibility:hidden}</style>
 <link rel="stylesheet" href="css/style.css">
 <style>
   .escritorio-card {
@@ -77,6 +78,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script src="js/firebase-init.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/core.js"></script>
 <script>
   async function criarEscritorio(usuario) {
     const nome = document.getElementById("nomeNovoEscritorio").value.trim();
@@ -202,7 +204,7 @@
       return;
     }
     const doc = await firebaseDb.collection("escritorios").doc(perfil.escritorioId).get();
-    el.innerHTML = `Hoje vinculada a: <b>${doc.exists ? doc.data().nome : "(escritório removido)"}</b>`;
+    el.innerHTML = `Hoje vinculada a: <b>${doc.exists ? escapeHtml(doc.data().nome) : "(escritório removido)"}</b>`;
   }
 
   async function carregarEscritorios(usuarioAtual) {
@@ -215,7 +217,7 @@
       select.innerHTML = "<option value=''>Nenhum escritório ainda</option>";
       return;
     }
-    select.innerHTML = snap.docs.map((d) => `<option value="${d.id}">${d.data().nome}</option>`).join("");
+    select.innerHTML = snap.docs.map((d) => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.data().nome)}</option>`).join("");
     for (const doc of snap.docs) {
       const escritorio = doc.data();
       const usuariosSnap = await firebaseDb.collection("usuarios").where("escritorioId", "==", doc.id).get();
@@ -225,14 +227,15 @@
         ? "<li>Nenhum usuário ainda.</li>"
         : usuariosSnap.docs.map((u) => {
             const dados = u.data();
+            const emailSeguro = escapeHtml(dados.email);
             const rotuloAdmin = dados.admin ? " · <b>admin do escritório</b>" : "";
-            return `<li><span>${dados.email}${rotuloAdmin}</span><span>
-              <button class="btn-alternar-admin" data-uid="${u.id}" data-admin="${!!dados.admin}" title="${dados.admin ? "Tirar admin" : "Tornar admin"}">${dados.admin ? "⭐" : "☆"}</button>
-              <button class="btn-excluir" data-uid="${u.id}" data-email="${dados.email}" title="Remover acesso">🗑️</button>
+            return `<li><span>${emailSeguro}${rotuloAdmin}</span><span>
+              <button class="btn-alternar-admin" data-uid="${escapeHtml(u.id)}" data-admin="${!!dados.admin}" title="${dados.admin ? "Tirar admin" : "Tornar admin"}">${dados.admin ? "⭐" : "☆"}</button>
+              <button class="btn-excluir" data-uid="${escapeHtml(u.id)}" data-email="${emailSeguro}" title="Remover acesso">🗑️</button>
             </span></li>`;
           }).join("");
       card.innerHTML = `
-        <h3>${escritorio.nome}</h3>
+        <h3>${escapeHtml(escritorio.nome)}</h3>
         <ul class="lista-usuarios">${listaUsuariosHtml}</ul>
         <div class="form-inline">
           <div class="campo"><label>E-mail do novo usuário</label><input type="email" class="campo-email"></div>

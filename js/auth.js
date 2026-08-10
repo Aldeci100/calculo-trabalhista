@@ -36,13 +36,23 @@ function sair() {
 }
 
 /**
+ * Revela a página (ela deve começar escondida via `<style>body{visibility:hidden}</style>`
+ * no <head>, antes de qualquer outro script) — evita mostrar a interface protegida
+ * por uma fração de segundo antes do redirecionamento pro login acontecer.
+ */
+function revelarPagina() {
+  document.body.style.visibility = "visible";
+}
+
+/**
  * Chame no topo de qualquer página que exija login. Redireciona para login.html se
  * não autenticado; se autenticado, preenche o e-mail em qualquer elemento com
- * id="usuarioLogado" e chama o callback com o usuário.
+ * id="usuarioLogado", revela a página e chama o callback com o usuário.
  */
 function exigirLogin(callback) {
   if (!firebaseConfigurado) {
     console.warn("Firebase não configurado — pulando checagem de login (modo de desenvolvimento).");
+    revelarPagina();
     if (callback) callback(null);
     return;
   }
@@ -55,6 +65,7 @@ function exigirLogin(callback) {
     if (elUsuario) elUsuario.textContent = usuario.email;
     const elAdmin = document.getElementById("linkAdmin");
     if (elAdmin) elAdmin.style.display = ehSuperAdmin(usuario) ? "inline" : "none";
+    revelarPagina();
     if (callback) callback(usuario);
   });
 }

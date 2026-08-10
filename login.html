@@ -6,7 +6,7 @@
 <title>Login — Cálculo Trabalhista</title>
 <link rel="stylesheet" href="css/style.css">
 <style>
-  body { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+  body { visibility: hidden; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
   .login-caixa { max-width: 360px; width: 100%; }
   .login-caixa h1 { text-align: center; font-size: 1.2rem; color: var(--azul-escuro); margin-bottom: 20px; }
   .login-caixa button { width: 100%; margin-top: 8px; }
@@ -42,9 +42,14 @@
 <script>
   if (!firebaseConfigurado) {
     document.getElementById("avisoNaoConfigurado").style.display = "block";
+    document.body.style.visibility = "visible";
   } else {
     firebaseAuth.onAuthStateChanged((usuario) => {
-      if (usuario) window.location.href = "index.html";
+      if (usuario) {
+        window.location.href = "index.html";
+        return;
+      }
+      document.body.style.visibility = "visible";
     });
   }
 

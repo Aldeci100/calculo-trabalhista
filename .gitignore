@@ -1,0 +1,5 @@
+# Exemplos/relatórios reais usados só como referência local — nunca publicar
+# (contêm nome real de reclamante/reclamado, número de processo real).
+PROCESSO_*
+RELATORIO_PROCESSO_*
+*.PJC

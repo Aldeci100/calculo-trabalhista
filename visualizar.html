@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Planilha de Cálculo — Cálculo Trabalhista</title>
+<style>body{visibility:hidden}</style>
 <link rel="stylesheet" href="css/style.css">
 <style>
   .cabecalho-processo {
@@ -114,13 +115,13 @@
       <section class="painel">
         <h2>Dados do processo</h2>
         <div class="cabecalho-processo">
-          <div><b>Reclamante:</b> ${calculo.reclamante || "-"}</div>
-          <div><b>Reclamado:</b> ${calculo.reclamado || "-"}</div>
-          <div><b>Processo:</b> ${calculo.numeroProcesso || "-"}</div>
+          <div><b>Reclamante:</b> ${escapeHtml(calculo.reclamante) || "-"}</div>
+          <div><b>Reclamado:</b> ${escapeHtml(calculo.reclamado) || "-"}</div>
+          <div><b>Processo:</b> ${escapeHtml(calculo.numeroProcesso) || "-"}</div>
           <div><b>Admissão:</b> ${formatarDataInputBR(calculo.admissao)}</div>
           <div><b>Demissão:</b> ${formatarDataInputBR(calculo.demissao)}</div>
           <div><b>Salário base:</b> ${formatarMoeda(calculo.salario)}</div>
-          <div><b>Calculado por:</b> ${calculo.criadoPor || "-"}</div>
+          <div><b>Calculado por:</b> ${escapeHtml(calculo.criadoPor) || "-"}</div>
           <div><b>Data do cálculo:</b> ${dataCriacao}</div>
         </div>
         <div class="acoes no-imprimir">

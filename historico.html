@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Histórico — Cálculo Trabalhista</title>
+<style>body{visibility:hidden}</style>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -73,16 +74,16 @@
       snap.forEach((doc) => {
         const c = doc.data();
         const data = c.criadoEm && c.criadoEm.toDate ? c.criadoEm.toDate().toLocaleString("pt-BR") : "-";
-        const url = `visualizar.html?id=${doc.id}`;
+        const url = `visualizar.html?id=${encodeURIComponent(doc.id)}`;
         const linha = document.createElement("tr");
         linha.style.cursor = "pointer";
         linha.innerHTML = `
           <td><a href="${url}">${data}</a></td>
-          <td><a href="${url}">${c.reclamante || "-"}</a></td>
-          <td>${c.reclamado || "-"}</td>
-          <td>${c.numeroProcesso || "-"}</td>
+          <td><a href="${url}">${escapeHtml(c.reclamante) || "-"}</a></td>
+          <td>${escapeHtml(c.reclamado) || "-"}</td>
+          <td>${escapeHtml(c.numeroProcesso) || "-"}</td>
           <td class="valor">${formatarMoeda(c.total)}</td>
-          <td>${c.criadoPor || "-"}</td>
+          <td>${escapeHtml(c.criadoPor) || "-"}</td>
           <td>${podeExcluirAqui ? '<button class="btn-excluir" title="Apagar">🗑️</button>' : ""}</td>
         `;
         linha.addEventListener("click", (e) => {
