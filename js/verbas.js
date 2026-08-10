@@ -220,18 +220,36 @@ const VERBA_MULTA_477 = {
   },
 };
 
+// A base da multa do art. 467 é somada automaticamente pelo motor (calcularRescisao),
+// a partir do resultado já calculado destas verbas — por isso não tem opcoes próprias.
+const VERBAS_BASE_MULTA_467 = [
+  { id: "saldoSalario", label: "Saldo de salário" },
+  { id: "avisoPrevio", label: "Aviso prévio indenizado" },
+  { id: "decimoTerceiro", label: "13º salário proporcional" },
+  { id: "ferias", label: "Férias + 1/3" },
+  { id: "multa40FGTS", label: "Multa de 40% sobre o FGTS" },
+];
+
 const VERBA_MULTA_467 = {
   id: "multa467",
   nome: "Multa do art. 467 da CLT",
-  baseLegal: "CLT art. 467 — 50% sobre as verbas rescisórias incontroversas não pagas na primeira audiência",
+  baseLegal: "CLT art. 467 — 50% sobre a soma de saldo de salário, aviso prévio indenizado, 13º, férias e multa de 40% do FGTS, quando incontroversas e não pagas na primeira audiência",
   incideFGTS: false,
   incideContribSocialIRPF: false,
-  calcular(dados, opcoes) {
-    const baseIncontroversa = Number(opcoes.baseIncontroversa || 0);
+  calcularComBase(resultadosJaCalculados) {
+    const partes = VERBAS_BASE_MULTA_467.map(({ id, label }) => {
+      const r = resultadosJaCalculados.find((x) => x.id === id);
+      return { label, valor: r ? r.devido : 0 };
+    });
+    const baseIncontroversa = arredondar(partes.reduce((soma, p) => soma + p.valor, 0));
     const devido = arredondar(baseIncontroversa * 0.5);
     return {
       devido,
-      memoria: [`Base incontroversa informada: ${formatarMoeda(baseIncontroversa)} x 50% = ${formatarMoeda(devido)}`],
+      memoria: [
+        ...partes.map((p) => `${p.label}: ${formatarMoeda(p.valor)}`),
+        `Base incontroversa (soma): ${formatarMoeda(baseIncontroversa)}`,
+        `${formatarMoeda(baseIncontroversa)} x 50% = ${formatarMoeda(devido)}`,
+      ],
     };
   },
 };
@@ -462,6 +480,7 @@ function calcularRescisao(dados, verbasAtivas, opcoesFGTS, opcoesTributos) {
   const resultados = [];
 
   for (const verba of VERBAS_FASE1) {
+    if (verba.id === "multa467") continue; // calculada depois, com base no resultado das outras verbas
     const ativa = verbasAtivas[verba.id];
     if (!ativa || !ativa.selecionada) continue;
     const { devido, memoria } = verba.calcular(dados, ativa.opcoes || {});
@@ -503,6 +522,19 @@ function calcularRescisao(dados, verbasAtivas, opcoesFGTS, opcoesTributos) {
       ].filter(Boolean),
     };
     resultados.push(multa40);
+  }
+
+  if (verbasAtivas.multa467 && verbasAtivas.multa467.selecionada) {
+    const { devido, memoria } = VERBA_MULTA_467.calcularComBase(resultados);
+    resultados.push({
+      id: "multa467",
+      nome: VERBA_MULTA_467.nome,
+      baseLegal: VERBA_MULTA_467.baseLegal,
+      devido,
+      memoria,
+      incideFGTS: false,
+      incideContribSocialIRPF: false,
+    });
   }
 
   if (opcoesTributos && (opcoesTributos.calcularContribSocial || opcoesTributos.calcularIRPF)) {
